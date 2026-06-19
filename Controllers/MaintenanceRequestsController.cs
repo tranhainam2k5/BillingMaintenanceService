@@ -14,6 +14,7 @@ namespace BillingMaintenanceService.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Route("api/maintenance")]
+    [Route("api/maintenance-requests")]
     [Authorize]
     public class MaintenanceRequestsController : ControllerBase
     {
@@ -28,16 +29,104 @@ namespace BillingMaintenanceService.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin,Manager,Staff,MaintenanceStaff")]
-        public async Task<IActionResult> GetRequests()
+        public async Task<IActionResult> GetRequests([FromQuery] string? status = null, [FromQuery] string? type = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
         {
+            var isPaged = HttpContext.Request.Query.ContainsKey("page");
             var requests = await _maintenanceService.GetAllRequestsAsync();
-            return Ok(requests);
+            var query = requests.AsQueryable();
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                var mappedStatus = status;
+                if (status == "NEW") mappedStatus = "Pending";
+                else if (status == "IN_PROGRESS") mappedStatus = "InProgress";
+                else if (status == "COMPLETED") mappedStatus = "Completed";
+                else if (status == "CANCELLED") mappedStatus = "Cancelled";
+
+                query = query.Where(r => r.Status == mappedStatus);
+            }
+
+            var studentIdQuery = HttpContext.Request.Query["studentId"].ToString();
+            if (!string.IsNullOrEmpty(studentIdQuery) && int.TryParse(studentIdQuery, out var studentId))
+            {
+                query = query.Where(r => r.UserId == studentId);
+            }
+
+            if (isPaged)
+            {
+                var totalItems = query.Count();
+                var list = query
+                    .OrderByDescending(r => r.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var mappedList = list.Select(r => new {
+                    r.Id,
+                    userId = r.UserId,
+                    studentId = r.UserId,
+                    studentName = r.User?.FullName ?? "Sinh viên",
+                    studentCode = r.User?.Username ?? string.Empty,
+                    title = r.Title,
+                    description = r.Description,
+                    roomNumber = r.RoomNumber,
+                    type = "PLUMBING",
+                    priority = "NORMAL",
+                    assignee = r.Technician?.Name,
+                    cost = r.RepairCost,
+                    status = r.Status == "Pending" ? "NEW" : r.Status == "InProgress" ? "IN_PROGRESS" : r.Status.ToUpper(),
+                    createdAt = r.CreatedAt,
+                    resolvedAt = r.ResolvedAt
+                }).ToList();
+
+                return Ok(new { items = mappedList, totalItems = totalItems });
+            }
+            else
+            {
+                return Ok(query.OrderByDescending(r => r.CreatedAt).ToList());
+            }
+        }
+
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetRequestById(int id)
+        {
+            var request = await _context.MaintenanceRequests
+                .Include(r => r.User)
+                .Include(r => r.Technician)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+            {
+                return NotFound($"Không tìm thấy yêu cầu sửa chữa với mã {id}.");
+            }
+
+            var mapped = new {
+                request.Id,
+                userId = request.UserId,
+                studentId = request.UserId,
+                studentName = request.User?.FullName ?? "Sinh viên",
+                studentCode = request.User?.Username ?? string.Empty,
+                title = request.Title,
+                description = request.Description,
+                roomNumber = request.RoomNumber,
+                type = "PLUMBING",
+                priority = "NORMAL",
+                assignee = request.Technician?.Name,
+                cost = request.RepairCost,
+                status = request.Status == "Pending" ? "NEW" : request.Status == "InProgress" ? "IN_PROGRESS" : request.Status.ToUpper(),
+                createdAt = request.CreatedAt,
+                resolvedAt = request.ResolvedAt
+            };
+
+            return Ok(mapped);
         }
 
         [HttpGet("my")]
         [Authorize(Roles = "Student,Admin,Manager")]
-        public async Task<IActionResult> GetMyRequests()
+        public async Task<IActionResult> GetMyRequests([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
         {
+            var isPaged = HttpContext.Request.Query.ContainsKey("page");
             var userIdClaim = User.FindFirst("userId")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
@@ -45,7 +134,41 @@ namespace BillingMaintenanceService.Controllers
             }
 
             var requests = await _maintenanceService.GetRequestsByUserIdAsync(userId);
-            return Ok(requests);
+            var query = requests.AsQueryable();
+
+            if (isPaged)
+            {
+                var totalItems = query.Count();
+                var list = query
+                    .OrderByDescending(r => r.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var mappedList = list.Select(r => new {
+                    r.Id,
+                    userId = r.UserId,
+                    studentId = r.UserId,
+                    studentName = r.User?.FullName ?? "Sinh viên",
+                    studentCode = r.User?.Username ?? string.Empty,
+                    title = r.Title,
+                    description = r.Description,
+                    roomNumber = r.RoomNumber,
+                    type = "PLUMBING",
+                    priority = "NORMAL",
+                    assignee = r.Technician?.Name,
+                    cost = r.RepairCost,
+                    status = r.Status == "Pending" ? "NEW" : r.Status == "InProgress" ? "IN_PROGRESS" : r.Status.ToUpper(),
+                    createdAt = r.CreatedAt,
+                    resolvedAt = r.ResolvedAt
+                }).ToList();
+
+                return Ok(new { items = mappedList, totalItems = totalItems });
+            }
+            else
+            {
+                return Ok(query.OrderByDescending(r => r.CreatedAt).ToList());
+            }
         }
 
         [HttpPost]

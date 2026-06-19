@@ -93,6 +93,43 @@ namespace BillingMaintenanceService.Controllers
 
             return Ok(debt);
         }
+
+        [HttpGet("stats")]
+        [Authorize(Roles = "Admin,Manager,Staff")]
+        public async Task<IActionResult> GetDebtStats()
+        {
+            var totalInvoicedAmount = await _context.Invoices
+                .Where(i => i.Status != "Cancelled")
+                .SumAsync(i => i.Amount);
+
+            var totalCollectedAmount = await _context.Payments
+                .Where(p => p.Status == "Success")
+                .SumAsync(p => p.Amount);
+
+            var totalOutstandingDebt = totalInvoicedAmount - totalCollectedAmount;
+
+            var unpaidInvoiceCount = await _context.Invoices
+                .Where(i => i.Status != "Paid" && i.Status != "Cancelled")
+                .CountAsync();
+
+            var overdueInvoiceCount = await _context.Invoices
+                .Where(i => i.Status != "Paid" && i.Status != "Cancelled" && i.DueDate < DateTime.UtcNow)
+                .CountAsync();
+
+            decimal debtPercentage = totalInvoicedAmount > 0 
+                ? Math.Round((totalOutstandingDebt / totalInvoicedAmount) * 100, 2)
+                : 0;
+
+            return Ok(new
+            {
+                TotalOutstandingDebt = totalOutstandingDebt,
+                TotalInvoicedAmount = totalInvoicedAmount,
+                TotalCollectedAmount = totalCollectedAmount,
+                UnpaidInvoiceCount = unpaidInvoiceCount,
+                OverdueInvoiceCount = overdueInvoiceCount,
+                DebtPercentage = debtPercentage
+            });
+        }
     }
 }
 

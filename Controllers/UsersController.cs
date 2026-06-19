@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace BillingMaintenanceService.Controllers
 {
@@ -28,6 +30,77 @@ namespace BillingMaintenanceService.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
+            // Tự động đồng bộ sinh viên mới từ API Nhóm 2 (Contract & Student Service)
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    httpClient.Timeout = TimeSpan.FromSeconds(5);
+                    var response = await httpClient.GetAsync("https://api-contract-nhom2contract-student-api.onrender.com/api/students?pageSize=200");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonString = await response.Content.ReadAsStringAsync();
+                        using (var doc = JsonDocument.Parse(jsonString))
+                        {
+                            var root = doc.RootElement;
+                            if (root.TryGetProperty("items", out var itemsProp) && itemsProp.ValueKind == JsonValueKind.Array)
+                            {
+                                var usersChanged = false;
+                                foreach (var item in itemsProp.EnumerateArray())
+                                {
+                                    var studentCode = item.TryGetProperty("studentCode", out var codeProp) ? codeProp.GetString() : string.Empty;
+                                    var fullName = item.TryGetProperty("fullName", out var nameProp) ? nameProp.GetString() : string.Empty;
+                                    var email = item.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : string.Empty;
+                                    var phoneNumber = item.TryGetProperty("phoneNumber", out var phoneProp) ? phoneProp.GetString() : string.Empty;
+                                    var activeRoomNumber = item.TryGetProperty("activeRoomNumber", out var roomProp) ? roomProp.GetString() : null;
+
+                                    if (string.IsNullOrWhiteSpace(studentCode)) continue;
+
+                                    var lowerCode = studentCode.ToLower();
+                                    var exists = await _context.Users.AnyAsync(u => u.Username.ToLower() == lowerCode);
+                                    if (!exists)
+                                    {
+                                        var newUser = new User
+                                        {
+                                            Username = studentCode,
+                                            FullName = string.IsNullOrWhiteSpace(fullName) ? studentCode : fullName,
+                                            Email = string.IsNullOrWhiteSpace(email) ? $"{studentCode}@ktx.local" : email,
+                                            PhoneNumber = phoneNumber ?? string.Empty,
+                                            Role = "Student",
+                                            RoomNumber = activeRoomNumber,
+                                            CreatedAt = DateTime.UtcNow
+                                        };
+                                        newUser.PasswordHash = _passwordHasher.HashPassword(newUser, "123456");
+                                        _context.Users.Add(newUser);
+                                        usersChanged = true;
+                                    }
+                                    else
+                                    {
+                                        // Cập nhật lại số phòng nếu có thay đổi
+                                        var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == lowerCode);
+                                        if (existingUser != null && existingUser.RoomNumber != activeRoomNumber)
+                                        {
+                                            existingUser.RoomNumber = activeRoomNumber;
+                                            _context.Users.Update(existingUser);
+                                            usersChanged = true;
+                                        }
+                                    }
+                                }
+                                if (usersChanged)
+                                {
+                                    await _context.SaveChangesAsync();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi ra console và tiếp tục để tránh làm sập API nếu Service Nhóm 2 gặp lỗi mạng
+                Console.WriteLine($"Error syncing students from Group 2: {ex.Message}");
+            }
+
             var users = await _context.Users
                 .Select(u => new
                 {

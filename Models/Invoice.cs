@@ -21,6 +21,9 @@ namespace BillingMaintenanceService.Models
         public decimal RoomFee { get; set; } = 0;
         public decimal ServiceFee { get; set; } = 0;
 
+        public int Month { get; set; }
+        public int Year { get; set; }
+
         // Navigation properties
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }

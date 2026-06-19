@@ -101,6 +101,53 @@ namespace BillingMaintenanceService.Controllers
 
             return Ok(new { Message = "Thực hiện thanh toán thành công và cập nhật trạng thái hóa đơn.", Payment = payment });
         }
+
+        [HttpPost("verify")]
+        [Authorize(Roles = "Admin,Manager,Staff")]
+        public async Task<IActionResult> VerifyPayment([FromBody] VerifyPaymentRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest("Dữ liệu xác minh không hợp lệ.");
+            }
+
+            var payment = await _context.Payments.FindAsync(request.PaymentId);
+            if (payment == null)
+            {
+                return NotFound($"Không tìm thấy giao dịch thanh toán với ID {request.PaymentId}.");
+            }
+
+            payment.Status = request.IsVerified ? "Success" : "Failed";
+            _context.Payments.Update(payment);
+            await _context.SaveChangesAsync();
+
+            if (payment.Status == "Success")
+            {
+                var invoice = await _context.Invoices.FindAsync(payment.InvoiceId);
+                if (invoice != null)
+                {
+                    var totalPaid = await _context.Payments
+                        .Where(p => p.InvoiceId == invoice.Id && p.Status == "Success")
+                        .SumAsync(p => p.Amount);
+
+                    if (totalPaid >= invoice.Amount)
+                    {
+                        invoice.Status = "Paid";
+                        _context.Invoices.Update(invoice);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+            }
+
+            return Ok(new
+            {
+                Message = "Xác minh thanh toán thành công.",
+                PaymentId = payment.Id,
+                Status = payment.Status,
+                Remarks = request.Remarks,
+                VerifiedAt = DateTime.UtcNow
+            });
+        }
     }
 
     public class CreatePaymentRequest
@@ -110,5 +157,12 @@ namespace BillingMaintenanceService.Controllers
         public string PaymentMethod { get; set; } = string.Empty;
         public string TransactionId { get; set; } = string.Empty;
         public string Status { get; set; } = "Success";
+    }
+
+    public class VerifyPaymentRequest
+    {
+        public int PaymentId { get; set; }
+        public bool IsVerified { get; set; }
+        public string Remarks { get; set; } = string.Empty;
     }
 }

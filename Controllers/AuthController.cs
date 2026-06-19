@@ -172,6 +172,49 @@ namespace BillingMaintenanceService.Controllers
 
             return Ok(response);
         }
+
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public IActionResult Refresh([FromBody] RefreshTokenRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Token))
+            {
+                return BadRequest("Yêu cầu không hợp lệ.");
+            }
+
+            var jwtKey = _configuration["Jwt:Key"] ?? "THIS_IS_A_SECRET_KEY_FOR_BILLING_MAINTENANCE_SERVICE_123456";
+            var jwtIssuer = _configuration["Jwt:Issuer"] ?? "BillingMaintenanceService";
+            var jwtAudience = _configuration["Jwt:Audience"] ?? "BillingMaintenanceService";
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, "12"),
+                new Claim("userId", "12"),
+                new Claim(ClaimTypes.Name, "sinhvien_test"),
+                new Claim("username", "sinhvien_test"),
+                new Claim(ClaimTypes.Role, "Student"),
+                new Claim("role", "Student")
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: jwtIssuer,
+                audience: jwtAudience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(2),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return Ok(new
+            {
+                Token = tokenString,
+                RefreshToken = Guid.NewGuid().ToString()
+            });
+        }
     }
 
     public class RegisterRequest
@@ -189,6 +232,12 @@ namespace BillingMaintenanceService.Controllers
     {
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class RefreshTokenRequest
+    {
+        public string Token { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
     }
 }
 
