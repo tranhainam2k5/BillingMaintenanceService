@@ -151,50 +151,92 @@ npm run dev
 
 ---
 
-## 🔗 5. API ENDPOINTS CHÍNH
+## 💳 5. ĐẶC TẢ TÍCH HỢP NHÓM 3 VỚI NHÓM 2
 
-Backend chạy tại `http://localhost:5300`
+### 5.1. Đồng bộ hóa tài khoản sinh viên
 
-### Xác thực (không cần token)
-```
-POST /api/auth/login      → Đăng nhập, nhận JWT token
-POST /api/auth/register   → Đăng ký tài khoản mới
-```
+> Nhóm 3 gọi API Nhóm 2 (`GET http://localhost:5000/api/students`) để tạo tài khoản sinh viên tương ứng.
 
-### Hóa đơn (cần Bearer token)
-```
-GET    /api/invoices             → Danh sách (admin)
-GET    /api/invoices/my          → Hóa đơn của sinh viên đang đăng nhập
-GET    /api/invoices/{id}        → Chi tiết hóa đơn
-POST   /api/invoices             → Tạo hóa đơn mới
-PATCH  /api/invoices/{id}/pay    → Ghi nhận thanh toán
-PUT    /api/invoices/{id}        → Cập nhật hóa đơn
-DELETE /api/invoices/{id}        → Xóa hóa đơn
-```
+| Thông tin | Giá trị |
+|---|---|
+| **Phương thức** | `GET` |
+| **Endpoint (kích hoạt)** | `/api/users/sync` |
+| **Mục đích** | Đồng bộ thủ công hoặc tự động tài khoản sinh viên |
 
-### Yêu cầu bảo trì
-```
-GET  /api/maintenance             → Danh sách tất cả (admin)
-GET  /api/maintenance/my          → Yêu cầu của sinh viên đang đăng nhập
-GET  /api/maintenance/{id}        → Chi tiết yêu cầu
-POST /api/maintenance             → Tạo yêu cầu mới
-PUT  /api/maintenance/{id}/status → Cập nhật trạng thái
-```
+**Phản hồi (200 OK):**
 
-### Dashboard & Thống kê
-```
-GET /api/dashboard/overview  → Tổng quan KPI
-GET /api/dashboard/revenue   → Doanh thu 12 tháng
-GET /api/dashboard/debt      → Thông tin công nợ
-```
+| Trường | Kiểu | Mô tả |
+|---|---|---|
+| `syncedCount` | `number` | Số tài khoản đã đồng bộ |
+| `message` | `string` | Thông báo kết quả |
 
-### Quản lý tài khoản
-```
-GET    /api/admins        → Danh sách admin/manager
-POST   /api/admins        → Tạo tài khoản nhân viên
-PUT    /api/admins/{id}   → Cập nhật thông tin
-DELETE /api/admins/{id}   → Xóa tài khoản
-```
+---
+
+### 5.2. Tạo hóa đơn tiền phòng
+
+> Admin tạo hóa đơn liên kết với sinh viên (Nhóm 2) và phòng (Nhóm 1).
+
+| Thông tin | Giá trị |
+|---|---|
+| **Phương thức** | `POST` |
+| **Endpoint** | `/api/invoices` |
+
+**Yêu cầu (Request Body):**
+
+| Trường | Kiểu | Mô tả | Ví dụ |
+|---|---|---|---|
+| `studentId` | `string (UUID)` | Mã sinh viên từ Nhóm 2 | `930b5e14-...` |
+| `roomId` | `string (UUID)` | Mã phòng từ Nhóm 1 | `401219e9-...` |
+| `title` | `string` | Tiêu đề hóa đơn | `Hóa đơn tiền phòng tháng 06/2026` |
+| `amount` | `number` | Số tiền (VNĐ) | `1200000.0` |
+| `type` | `string` | Loại hóa đơn | `ROOM` |
+| `dueDate` | `string (ISO8601)` | Hạn nộp | `2026-06-30T00:00:00Z` |
+
+**Phản hồi (201 Created):**
+
+| Trường | Kiểu | Mô tả |
+|---|---|---|
+| `id` | `string` | Mã hóa đơn tự sinh |
+| `studentId` | `string` | Mã sinh viên |
+| `roomId` | `string` | Mã phòng |
+| `title` | `string` | Tiêu đề |
+| `amount` | `number` | Số tiền |
+| `type` | `string` | Loại hóa đơn |
+| `status` | `string` | Trạng thái (`UNPAID`) |
+| `dueDate` | `string` | Hạn nộp |
+| `createdAt` | `string` | Thời điểm tạo |
+
+---
+
+### 5.3. Tạo yêu cầu bảo trì
+
+> Sinh viên gửi yêu cầu sửa chữa liên kết với phòng (Nhóm 1) và tài khoản (Nhóm 2).
+
+| Thông tin | Giá trị |
+|---|---|
+| **Phương thức** | `POST` |
+| **Endpoint** | `/api/maintenance` |
+
+**Yêu cầu (Request Body):**
+
+| Trường | Kiểu | Mô tả | Ví dụ |
+|---|---|---|---|
+| `studentId` | `string (UUID)` | Mã sinh viên từ Nhóm 2 | `930b5e14-...` |
+| `roomId` | `string (UUID)` | Mã phòng từ Nhóm 1 | `401219e9-...` |
+| `description` | `string` | Mô tả sự cố | `Điều hòa chảy nước và bóng đèn bị hỏng` |
+| `imageUrl` | `string (URL)` | Ảnh đính kèm (tùy chọn) | `https://example.com/broken-ac.jpg` |
+
+**Phản hồi (201 Created):**
+
+| Trường | Kiểu | Mô tả |
+|---|---|---|
+| `id` | `string` | Mã yêu cầu tự sinh |
+| `studentId` | `string` | Mã sinh viên |
+| `roomId` | `string` | Mã phòng |
+| `description` | `string` | Mô tả sự cố |
+| `status` | `string` | Trạng thái ban đầu (`Pending`) |
+| `imageUrl` | `string` | URL ảnh đính kèm |
+| `createdAt` | `string` | Thời điểm tạo |
 
 ---
 
