@@ -26,10 +26,10 @@ Thumbs.db
 appsettings.Development.json
 .env
 
-## Node / Vite
-node_modules/
-dist/
-.env.local
+## Node (QLKTX frontend)
+QLKTX/node_modules/
+QLKTX/dist/
+QLKTX/.env.local
 
 ## Database dumps
 database/*.sql

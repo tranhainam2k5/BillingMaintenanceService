@@ -1,0 +1,62 @@
+@BillingMaintenanceService_HostAddress = http://localhost:5001
+@ExternalService_HostAddress = https://roombuildingservice-1ijx.onrender.com
+
+### ==================== LOCAL WEATHER FORECAST ====================
+GET {{BillingMaintenanceService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+### ==================== EXTERNAL GROUP 1 DIRECT API CALLS ====================
+
+# Get all buildings directly from Group 1
+GET {{ExternalService_HostAddress}}/api/Buildings
+Accept: application/json
+
+###
+
+# Get all rooms directly from Group 1
+GET {{ExternalService_HostAddress}}/api/Rooms
+Accept: application/json
+
+###
+
+# Get all beds directly from Group 1
+GET {{ExternalService_HostAddress}}/api/Beds
+Accept: application/json
+
+###
+
+# Get all equipments directly from Group 1
+GET {{ExternalService_HostAddress}}/api/Equipments
+Accept: application/json
+
+### ==================== LOCAL PROXY ENDPOINTS FOR EXTERNAL API ====================
+
+# Get buildings via local proxy
+GET {{BillingMaintenanceService_HostAddress}}/api/externalrooms/buildings
+Accept: application/json
+
+###
+
+# Get all rooms via local proxy
+GET {{BillingMaintenanceService_HostAddress}}/api/externalrooms/rooms
+Accept: application/json
+
+###
+
+# Get rooms for a specific building via local proxy
+GET {{BillingMaintenanceService_HostAddress}}/api/externalrooms/rooms?buildingId=9d07c61a-74fc-457d-87f8-bc6b8e76c17c
+Accept: application/json
+
+### ==================== GROUP 2 DIRECT API CALLS ====================
+
+# Get all students directly from Group 2
+GET https://api-contract-nhom2contract-student-api.onrender.com/api/students
+Accept: application/json
+
+### ==================== LOCAL USERS SYNC ENDPOINT ====================
+
+# Trigger student sync from Group 2 and retrieve all local users
+GET {{BillingMaintenanceService_HostAddress}}/api/users
+Accept: application/json
+
+

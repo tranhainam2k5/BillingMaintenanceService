@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KTX Manager - Hệ thống Quản lý KTX Hiện đại</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- ==================== AUTH CONTAINER ==================== -->
+    <div id="auth-container" class="auth-wrapper">
+        <!-- Login Screen -->
+        <div id="login-screen" class="auth-card">
+            <div class="auth-header">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-hotel"></i>
+                </div>
+                <h2>Chào mừng trở lại!</h2>
+                <p>Vui lòng đăng nhập để quản lý tài khoản của bạn</p>
+            </div>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-username">Tên đăng nhập</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-user"></i>
+                        <input type="text" id="login-username" placeholder="Nhập tên đăng nhập" required autocomplete="username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Đăng Nhập</button>
+            </form>
+            <div class="auth-footer">
+                <p>Chưa có tài khoản? <a href="#" id="go-to-register">Đăng ký ngay</a></p>
+            </div>
+        </div>
+
+        <!-- Register Screen -->
+        <div id="register-screen" class="auth-card hidden">
+            <div class="auth-header">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <h2>Tạo tài khoản mới</h2>
+                <p>Đăng ký thành viên hệ thống ký túc xá</p>
+            </div>
+            <form id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-username">Tên đăng nhập <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-user"></i>
+                        <input type="text" id="register-username" placeholder="Ví dụ: sinhvien123" required autocomplete="username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Mật khẩu <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="register-password" placeholder="Tối thiểu 6 ký tự" required autocomplete="new-password">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-fullname">Họ và tên <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-id-card"></i>
+                        <input type="text" id="register-fullname" placeholder="Nhập họ và tên đầy đủ" required autocomplete="name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Địa chỉ Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="register-email" placeholder="example@email.com" autocomplete="email">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-phone">Số điện thoại</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="tel" id="register-phone" placeholder="09xxxxxxxx" autocomplete="tel">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-role">Vai trò đăng ký</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <select id="register-role">
+                            <option value="Student">Sinh viên (Student)</option>
+                            <option value="Staff">Nhân viên (Staff)</option>
+                            <option value="Admin">Quản trị viên (Admin)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Đăng Ký</button>
+            </form>
+            <div class="auth-footer">
+                <p>Đã có tài khoản? <a href="#" id="go-to-login">Đăng nhập</a></p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== MAIN PORTAL CONTAINER ==================== -->
+    <div id="portal-container" class="portal-wrapper hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <i class="fa-solid fa-hotel brand-icon"></i>
+                    <span class="brand-name">KTX Manager</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-screen="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-screen="contracts">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Hợp đồng phòng</span>
+                </a>
+                <a href="#" class="nav-item" data-screen="invoices">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Hóa đơn</span>
+                </a>
+                <a href="#" class="nav-item" data-screen="payments">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Thanh toán</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-screen="debts">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    <span>Công nợ SV</span>
+                </a>
+                <a href="#" class="nav-item" data-screen="maintenance">
+                    <i class="fa-solid fa-wrench"></i>
+                    <span>Sửa chữa</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-badge">
+                    <div class="user-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span id="user-display-name" class="user-name">User</span>
+                        <span id="user-display-role" class="user-role">Role</span>
+                    </div>
+                </div>
+                <button id="btn-logout" class="btn btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Đăng xuất</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Navbar -->
+            <header class="top-nav">
+                <h1 id="screen-title">Dashboard</h1>
+                <div class="header-actions">
+                    <div class="notification-bell">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="badge"></span>
+                    </div>
+                    <div class="user-room-indicator student-only hidden">
+                        <i class="fa-solid fa-door-open"></i>
+                        Phòng: <strong id="user-display-room">Chưa có</strong>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Active Content Container -->
+            <div id="content-area" class="content-body">
+                
+                <!-- 1. DASHBOARD VIEW -->
+                <section id="screen-dashboard" class="screen-view active">
+                    <!-- KPI Cards Grid -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card purple">
+                            <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Tổng doanh thu thực tế</span>
+                                <h3 id="kpi-revenue" class="kpi-value">0đ</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card danger">
+                            <div class="kpi-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Tổng nợ chưa thu hồi</span>
+                                <h3 id="kpi-debt" class="kpi-value">0đ</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card blue">
+                            <div class="kpi-icon"><i class="fa-solid fa-file-contract"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Hợp đồng đang hoạt động</span>
+                                <h3 id="kpi-contracts" class="kpi-value">0</h3>
+                            </div>
+                        </div>
+                        <div class="kpi-card warning">
+                            <div class="kpi-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                            <div class="kpi-details">
+                                <span class="kpi-label">Yêu cầu sửa chữa chờ xử lý</span>
+                                <h3 id="kpi-maintenance" class="kpi-value">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts & Occupancy Row -->
+                    <div class="dashboard-charts">
+                        <div class="chart-card main-chart">
+                            <h3>Biểu đồ doanh thu (12 tháng qua)</h3>
+                            <div class="canvas-container">
+                                <canvas id="revenueLineChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card side-chart">
+                            <h3>Tỷ lệ lấp đầy phòng</h3>
+                            <div class="occupancy-progress-wrapper">
+                                <div class="progress-ring-container">
+                                    <div id="occupancy-circle" class="occupancy-circle">
+                                        <span id="occupancy-percentage">0%</span>
+                                    </div>
+                                </div>
+                                <div class="occupancy-stats">
+                                    <p><strong id="occupancy-rooms">0</strong> / <strong id="occupancy-total">100</strong> phòng đã thuê</p>
+                                    <div class="progress-bar-flat">
+                                        <div id="occupancy-bar" class="progress-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-charts bottom-row">
+                        <div class="chart-card full-width-chart">
+                            <h3>Trạng thái yêu cầu sửa chữa</h3>
+                            <div class="maintenance-chart-wrapper">
+                                <div class="canvas-container-doughnut">
+                                    <canvas id="maintenancePieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. CONTRACTS VIEW -->
+                <section id="screen-contracts" class="screen-view hidden">
+                    <div class="table-actions">
+                        <h3>Danh sách Hợp đồng ký túc xá</h3>
+                        <button id="btn-add-contract" class="btn btn-primary admin-only">
+                            <i class="fa-solid fa-plus"></i> Tạo hợp đồng mới
+                        </button>
+                    </div>
+                    <div class="card table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã HĐ</th>
+                                    <th>Sinh viên</th>
+                                    <th>Số phòng</th>
+                                    <th>Ngày bắt đầu</th>
+                                    <th>Ngày hết hạn</th>
+                                    <th>Giá phòng / tháng</th>
+                                    <th>Trạng thái</th>
+                                    <th class="admin-only">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contracts-table-body">
+                                <!-- Dynamic rendering -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 3. INVOICES VIEW -->
+                <section id="screen-invoices" class="screen-view hidden">
+                    <div class="table-actions">
+                        <h3>Quản lý Hóa đơn</h3>
+                        <div class="filter-group">
+                            <select id="invoice-filter-status" class="filter-select">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="Unpaid">Chưa thanh toán</option>
+                                <option value="Partial">Thanh toán một phần</option>
+                                <option value="Paid">Đã thanh toán</option>
+                                <option value="Overdue">Quá hạn</option>
+                            </select>
+                            <button id="btn-add-invoice" class="btn btn-primary admin-only">
+                                <i class="fa-solid fa-plus"></i> Tạo hóa đơn thủ công
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã HĐ</th>
+                                    <th>Sinh viên</th>
+                                    <th>Hạng mục hóa đơn</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Tháng/Năm</th>
+                                    <th>Hạn thanh toán</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoices-table-body">
+                                <!-- Dynamic rendering -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 4. PAYMENTS VIEW -->
+                <section id="screen-payments" class="screen-view hidden">
+                    <div class="table-actions">
+                        <h3>Lịch sử giao dịch thanh toán</h3>
+                    </div>
+                    <div class="card table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã GD</th>
+                                    <th>Sinh viên</th>
+                                    <th>Mã Hóa đơn</th>
+                                    <th>Số tiền đã trả</th>
+                                    <th>Phương thức</th>
+                                    <th>Mã tham chiếu GD</th>
+                                    <th>Thời gian trả</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-table-body">
+                                <!-- Dynamic rendering -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 5. DEBTS VIEW (ADMIN/STAFF ONLY) -->
+                <section id="screen-debts" class="screen-view hidden">
+                    <div class="table-actions">
+                        <h3>Tổng hợp công nợ Sinh viên</h3>
+                    </div>
+                    <div class="card table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID Sinh Viên</th>
+                                    <th>Tên sinh viên</th>
+                                    <th>Số phòng</th>
+                                    <th>Tổng công nợ chưa trả</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="debts-table-body">
+                                <!-- Dynamic rendering -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 6. MAINTENANCE REQUESTS VIEW -->
+                <section id="screen-maintenance" class="screen-view hidden">
+                    <div class="table-actions">
+                        <h3>Yêu cầu sửa chữa thiết bị</h3>
+                        <button id="btn-add-maintenance" class="btn btn-primary">
+                            <i class="fa-solid fa-circle-question"></i> Tạo yêu cầu mới
+                        </button>
+                    </div>
+                    <div class="maintenance-grid" id="maintenance-cards-container">
+                        <!-- Dynamic rendering as modern cards -->
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- 1. Create Contract Modal -->
+    <div id="modal-contract" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tạo hợp đồng thuê phòng mới</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="contract-form">
+                <div class="form-group">
+                    <label for="contract-student-id">Chọn Sinh Viên</label>
+                    <select id="contract-student-id" class="form-control" required>
+                        <!-- Options populated dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="contract-building-select">Chọn Tòa nhà</label>
+                    <select id="contract-building-select" class="form-control" required>
+                        <option value="">-- Đang tải danh sách tòa nhà... --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="contract-room-select">Chọn Phòng</label>
+                    <select id="contract-room-select" class="form-control" required>
+                        <option value="">-- Vui lòng chọn tòa nhà trước --</option>
+                    </select>
+                </div>
+                <input type="hidden" id="contract-room">
+                <div class="form-group">
+                    <label for="contract-start">Ngày bắt đầu</label>
+                    <input type="date" id="contract-start" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="contract-end">Ngày kết thúc</label>
+                    <input type="date" id="contract-end" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="contract-fee">Tiền phòng / tháng (VND)</label>
+                    <input type="number" id="contract-fee" class="form-control" value="1500000" required min="0">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary">Lưu hợp đồng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Create Invoice Modal -->
+    <div id="modal-invoice" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tạo hóa đơn thủ công</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="invoice-form">
+                <div class="form-group">
+                    <label for="invoice-student-id">Chọn Sinh Viên</label>
+                    <select id="invoice-student-id" class="form-control" required>
+                        <!-- Options populated dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="invoice-title">Tên hóa đơn / Tiêu đề</label>
+                    <input type="text" id="invoice-title" class="form-control" placeholder="Ví dụ: Tiền điện nước bổ sung Tháng 5" required>
+                </div>
+                <div class="form-group">
+                    <label for="invoice-description">Mô tả chi tiết</label>
+                    <textarea id="invoice-description" class="form-control" placeholder="Mô tả cụ thể về hóa đơn..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="invoice-room-fee">Tiền phòng (VND)</label>
+                        <input type="number" id="invoice-room-fee" class="form-control" value="0" min="0">
+                    </div>
+                    <div class="form-group col">
+                        <label for="invoice-electricity-fee">Tiền điện (VND)</label>
+                        <input type="number" id="invoice-electricity-fee" class="form-control" value="0" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="invoice-water-fee">Tiền nước (VND)</label>
+                        <input type="number" id="invoice-water-fee" class="form-control" value="0" min="0">
+                    </div>
+                    <div class="form-group col">
+                        <label for="invoice-service-fee">Phí dịch vụ (VND)</label>
+                        <input type="number" id="invoice-service-fee" class="form-control" value="0" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="invoice-amount">Tổng cộng (Tự động tính hoặc nhập tay)</label>
+                    <input type="number" id="invoice-amount" class="form-control" required min="0">
+                </div>
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="invoice-month">Tháng</label>
+                        <input type="number" id="invoice-month" class="form-control" min="1" max="12" required>
+                    </div>
+                    <div class="form-group col">
+                        <label for="invoice-year">Năm</label>
+                        <input type="number" id="invoice-year" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="invoice-duedate">Hạn thanh toán</label>
+                    <input type="date" id="invoice-duedate" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Tạo hóa đơn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Pay Invoice Modal -->
+    <div id="modal-pay" class="modal hidden">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2>Thanh toán hóa đơn</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="pay-form">
+                <input type="hidden" id="pay-invoice-id">
+                <div class="payment-summary">
+                    <p>Hóa đơn: <strong id="pay-title">Tiền phòng tháng...</strong></p>
+                    <p>Tổng tiền hóa đơn: <strong id="pay-total-amount">0đ</strong></p>
+                    <p>Cần thanh toán thêm: <strong id="pay-remaining-amount">0đ</strong></p>
+                </div>
+                <div class="form-group">
+                    <label for="pay-amount">Số tiền thanh toán (VND)</label>
+                    <input type="number" id="pay-amount" class="form-control" required min="1000">
+                </div>
+                <div class="form-group">
+                    <label for="pay-method">Phương thức</label>
+                    <select id="pay-method" class="form-control">
+                        <option value="Transfer">Chuyển khoản Ngân hàng (Transfer)</option>
+                        <option value="Card">Thẻ tín dụng/ATM (Card)</option>
+                        <option value="Cash">Tiền mặt (Cash)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pay-ref">Mã tham chiếu GD (Nếu CK/Thẻ)</label>
+                    <input type="text" id="pay-ref" class="form-control" placeholder="Mã giao dịch ngân hàng">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Quay lại</button>
+                    <button type="submit" class="btn btn-success"><i class="fa-solid fa-circle-check"></i> Xác nhận thanh toán</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Create Maintenance Modal -->
+    <div id="modal-maintenance" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Gửi yêu cầu sửa chữa</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="maintenance-form">
+                <div class="form-group">
+                    <label for="maintenance-description">Mô tả sự cố cần khắc phục</label>
+                    <textarea id="maintenance-description" class="form-control" rows="4" placeholder="Mô tả cụ thể sự cố. Ví dụ: Hỏng bóng đèn nhà vệ sinh phòng 301, vòi nước rò rỉ..." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Gửi yêu cầu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. View & Process Maintenance Modal (Admin/Staff only to process, student to view details) -->
+    <div id="modal-maintenance-detail" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Chi tiết yêu cầu sửa chữa #<span id="detail-m-id"></span></h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body-scrollable">
+                <div class="detail-section">
+                    <p><strong>Người gửi:</strong> <span id="detail-m-user">...</span></p>
+                    <p><strong>Phòng:</strong> <span id="detail-m-room">...</span></p>
+                    <p><strong>Mô tả:</strong> <span id="detail-m-description">...</span></p>
+                    <p><strong>Trạng thái:</strong> <span id="detail-m-status">...</span></p>
+                    <p><strong>Ngày tạo:</strong> <span id="detail-m-date">...</span></p>
+                </div>
+
+                <!-- Image gallery -->
+                <div class="detail-images-section">
+                    <h3>Hình ảnh hiện trường</h3>
+                    <div class="images-gallery" id="detail-m-images">
+                        <!-- Rendered dynamically -->
+                    </div>
+                    
+                    <!-- Upload section (for student or staff to add images) -->
+                    <div class="upload-control-wrapper mt-3">
+                        <label class="btn btn-info cursor-pointer">
+                            <i class="fa-solid fa-image"></i> Tải ảnh lên hiện trường
+                            <input type="file" id="upload-image-input" accept="image/*" multiple style="display:none;">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Admin/Staff processing area -->
+                <div class="admin-process-section admin-only mt-4 pt-3 border-top">
+                    <h3>Xử lý yêu cầu (Dành cho Quản trị viên/Nhân viên)</h3>
+                    <form id="maintenance-process-form">
+                        <input type="hidden" id="process-m-id">
+                        <div class="form-group">
+                            <label for="process-m-status-select">Cập nhật trạng thái</label>
+                            <select id="process-m-status-select" class="form-control">
+                                <option value="Pending">Chờ xử lý (Pending)</option>
+                                <option value="InProgress">Đang tiến hành (InProgress)</option>
+                                <option value="Completed">Đã hoàn thành (Completed)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="process-m-tech-select">Giao cho Kỹ thuật viên</label>
+                            <select id="process-m-tech-select" class="form-control">
+                                <option value="">-- Chưa giao ai --</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="process-m-notes">Ghi chú xử lý / Phản hồi</label>
+                            <textarea id="process-m-notes" class="form-control" rows="3" placeholder="Nhập ghi chú xử lý..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2">Cập nhật tiến độ</button>
+                    </form>
+                </div>
+
+                <!-- Guest/Student response display if notes are available -->
+                <div class="student-notes-display mt-3 pt-3 border-top" id="detail-m-notes-section">
+                    <h3>Ghi chú phản hồi của KTX:</h3>
+                    <div class="notes-content-box" id="detail-m-notes-box">Chưa có phản hồi.</div>
+                    <p class="mt-2 text-muted">Kỹ thuật viên phụ trách: <strong id="detail-m-tech-name">Chưa phân công</strong></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-modal-btn">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Student Debt Detail Modal (for Admin to view specific student debts) -->
+    <div id="modal-student-debt" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Chi tiết công nợ sinh viên: <span id="debt-student-name"></span></h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body-scrollable">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã HĐ</th>
+                            <th>Tiêu đề hóa đơn</th>
+                            <th>Hạn trả</th>
+                            <th>Tháng/Năm</th>
+                            <th>Tổng tiền</th>
+                            <th>Đã trả</th>
+                            <th>Còn nợ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-debt-details-table">
+                        <!-- Dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-modal-btn">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/contracts.js"></script>
+    <script src="/js/invoices.js"></script>
+    <script src="/js/payments.js"></script>
+    <script src="/js/debts.js"></script>
+    <script src="/js/maintenance.js"></script>
+    
+    <!-- SPA Startup initialization -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Check auth on load
+            appInit();
+        });
+    </script>
+</body>
+</html>
